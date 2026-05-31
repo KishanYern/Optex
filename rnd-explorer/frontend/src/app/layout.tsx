@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+
+import Header from "@/components/Header";
+
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "rnd-explorer",
-  description: "Single-expiry risk-neutral density extractor",
+  title: "optex",
+  description: "Interactive visualizations for options markets.",
 };
 
 export default function RootLayout({
@@ -27,7 +30,10 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col bg-black">
+        <Header />
+        <div className="flex-1">{children}</div>
+      </body>
     </html>
   );
 }
