@@ -27,7 +27,19 @@ rnd-explorer/
     (Next.js app)
 ```
 
-## Run with Docker (recommended)
+## Run locally with one command
+
+From `rnd-explorer/`:
+
+```
+pwsh dev.ps1
+```
+
+Starts uvicorn (backend, port 8000) and `npm run dev` (frontend, port 3000) in
+the same terminal. Ctrl+C stops both — the script kills the full process tree
+so npm's child `node` process is cleaned up too.
+
+## Run with Docker
 
 ```
 docker compose up --build
