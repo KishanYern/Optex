@@ -1,0 +1,58 @@
+# rnd-explorer
+
+Single-expiration risk-neutral density (RND) extractor for equity options.
+
+Pulls a call/put chain for one expiry, smooths implied vol across strikes with a
+cubic spline, reprices on a dense K grid, and takes the discrete second
+derivative of C(K) to recover the risk-neutral density f(S_T).
+
+## Stack
+
+- **Backend:** Python, FastAPI, yfinance, NumPy, SciPy
+- **Frontend:** Next.js + React + Plotly
+
+## Layout
+
+```
+rnd-explorer/
+  backend/
+    app/
+      main.py          FastAPI entrypoint and routes
+      data.py          yfinance chain fetch, spot, risk-free rate
+      iv.py            Black-Scholes pricing and IV solver
+      rnd.py           IV-space spline, RND extraction
+      diagnostics.py   Arbitrage checks, fit quality
+    requirements.txt
+  frontend/
+    (Next.js app)
+```
+
+## Run with Docker (recommended)
+
+```
+docker compose up --build
+```
+
+- Backend: http://localhost:8000 (FastAPI, hot reload on `backend/app` changes)
+- Frontend: http://localhost:3000 (Next.js dev server, hot reload on `frontend/` changes)
+
+Run backend tests inside the container:
+```
+docker compose run --rm backend pytest -v
+```
+
+## Run locally without Docker
+
+Backend:
+```
+cd backend
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
+
+Frontend:
+```
+cd frontend
+npm install
+npm run dev
+```
