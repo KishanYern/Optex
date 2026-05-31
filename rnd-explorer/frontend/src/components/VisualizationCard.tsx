@@ -2,6 +2,8 @@ import Link from "next/link";
 
 import type { Visualization } from "@/lib/visualizations";
 
+import MathText from "./MathText";
+
 type Props = {
   v: Visualization;
   index: number;
@@ -67,14 +69,14 @@ export default function VisualizationCard({ v, index }: Props) {
           className="mt-6 font-serif-italic text-lg sm:text-xl leading-snug max-w-2xl"
           style={{ color: "var(--ink-soft)" }}
         >
-          {v.blurb}
+          <MathText>{v.blurb}</MathText>
         </p>
 
         <p
           className="mt-5 text-[15px] leading-relaxed max-w-2xl"
           style={{ color: "var(--ink-soft)" }}
         >
-          {v.description}
+          <MathText>{v.description}</MathText>
         </p>
       </div>
 

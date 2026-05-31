@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 
 import { VISUALIZATIONS } from "@/lib/visualizations";
 
+import MathText from "./MathText";
+
 export default function Header() {
   const [open, setOpen] = useState(false);
 
@@ -169,7 +171,7 @@ export default function Header() {
                       className="text-base sm:text-lg mt-2 max-w-xl"
                       style={{ color: "var(--ink-soft)" }}
                     >
-                      {v.blurb}
+                      <MathText>{v.blurb}</MathText>
                     </div>
                   </div>
                   <span
