@@ -8,86 +8,193 @@ import { VISUALIZATIONS } from "@/lib/visualizations";
 export default function Header() {
   const [open, setOpen] = useState(false);
 
-  // Close on Escape
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.documentElement.style.overflow = "hidden";
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      document.documentElement.style.overflow = "";
+      window.removeEventListener("keydown", onKey);
+    };
   }, [open]);
 
   return (
-    <header className="sticky top-0 z-40 bg-black/90 backdrop-blur border-b border-neutral-900">
-      <div className="flex items-center justify-between px-4 sm:px-6 h-12">
-        <Link href="/" className="font-mono text-sm text-emerald-400 hover:text-emerald-300">
-          optex<span className="text-neutral-600">{" // options viz"}</span>
-        </Link>
+    <>
+      <header
+        className="sticky top-0 z-30 backdrop-blur-md border-b"
+        style={{
+          backgroundColor: "rgba(15, 10, 31, 0.78)",
+          borderColor: "var(--rule)",
+        }}
+      >
+        <div className="flex items-center justify-between px-6 sm:px-10 h-16">
+          <Link
+            href="/"
+            className="flex items-baseline gap-3 group"
+            aria-label="optex home"
+          >
+            <span
+              className="font-serif text-[28px] leading-none tracking-[-0.015em]"
+              style={{ color: "var(--ink)" }}
+            >
+              op
+              <span
+                className="font-serif-italic"
+                style={{ color: "var(--accent)" }}
+              >
+                t
+              </span>
+              ex
+            </span>
+            <span
+              className="hidden sm:inline font-mono text-[10px] uppercase tracking-[0.28em] -translate-y-[2px]"
+              style={{ color: "var(--ink-faint)" }}
+            >
+              An interactive study of options markets
+            </span>
+          </Link>
 
-        <button
-          type="button"
-          aria-label="Open menu"
-          aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
-          className="p-2 -mr-2 text-neutral-300 hover:text-emerald-400"
-        >
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            {open ? (
-              <>
-                <path d="M4 4 L16 16" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M16 4 L4 16" stroke="currentColor" strokeWidth="1.5" />
-              </>
-            ) : (
-              <>
-                <path d="M3 6 H17" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M3 10 H17" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M3 14 H17" stroke="currentColor" strokeWidth="1.5" />
-              </>
-            )}
-          </svg>
-        </button>
-      </div>
+          <button
+            type="button"
+            aria-label={open ? "Close index" : "Open index"}
+            aria-expanded={open}
+            onClick={() => setOpen((v) => !v)}
+            className="group flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.28em] transition-colors"
+            style={{ color: open ? "var(--accent)" : "var(--ink-soft)" }}
+          >
+            <span
+              className="inline-block h-px transition-all"
+              style={{
+                backgroundColor: "currentColor",
+                width: open ? "2.5rem" : "1.5rem",
+              }}
+            />
+            {open ? "Close" : "Index"}
+          </button>
+        </div>
+      </header>
 
       {open && (
-        <>
+        <div
+          className="fixed inset-0 z-50 menu-veil overflow-y-auto"
+          role="dialog"
+          aria-modal="true"
+          style={{ backgroundColor: "var(--bg-deep)" }}
+          onClick={() => setOpen(false)}
+        >
+          {/* Inner glow */}
           <div
-            className="fixed inset-0 top-12 bg-black/60"
-            onClick={() => setOpen(false)}
-            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(50rem 35rem at 50% -10%, rgba(167, 139, 250, 0.22), transparent 60%)",
+            }}
           />
           <nav
-            className="absolute right-0 top-12 w-72 max-w-[90vw] bg-neutral-950 border-l border-b border-neutral-800 p-3 flex flex-col gap-1"
+            className="relative z-10 min-h-full flex flex-col px-6 sm:px-10 pt-24 pb-12 max-w-5xl mx-auto"
+            onClick={(e) => e.stopPropagation()}
           >
+            <div
+              className="menu-item flex items-baseline gap-4 mb-12"
+              style={{ animationDelay: "60ms" }}
+            >
+              <span
+                className="font-mono text-[10px] uppercase tracking-[0.3em]"
+                style={{ color: "var(--ink-faint)" }}
+              >
+                Index of Studies
+              </span>
+              <span className="flex-1 h-px" style={{ backgroundColor: "var(--rule)" }} />
+              <span
+                className="font-mono text-[10px] uppercase tracking-[0.3em]"
+                style={{ color: "var(--ink-faint)" }}
+              >
+                Esc to close
+              </span>
+            </div>
+
             <Link
               href="/"
               onClick={() => setOpen(false)}
-              className="px-3 py-2 text-sm font-mono text-neutral-300 hover:bg-neutral-900 hover:text-emerald-400 border border-transparent hover:border-neutral-800"
+              className="menu-item group flex items-baseline gap-6 py-6 border-b transition-colors"
+              style={{ borderColor: "var(--rule)", animationDelay: "140ms" }}
             >
-              home
-            </Link>
-            <div className="text-[10px] uppercase tracking-wider text-neutral-600 px-3 pt-3 pb-1">
-              Visualizations
-            </div>
-            {VISUALIZATIONS.map((v) => (
-              <Link
-                key={v.slug}
-                href={`/visualizations/${v.slug}`}
-                onClick={() => setOpen(false)}
-                className="px-3 py-2 text-sm font-mono text-neutral-300 hover:bg-neutral-900 hover:text-emerald-400 border border-transparent hover:border-neutral-800 flex flex-col gap-0.5"
+              <span
+                className="font-mono text-[11px] uppercase tracking-[0.28em] w-24"
+                style={{ color: "var(--ink-faint)" }}
               >
-                <span className="flex items-center gap-2">
-                  {v.title}
-                  {v.status === "coming-soon" && (
-                    <span className="text-[10px] uppercase text-amber-500 border border-amber-900/50 px-1">
-                      soon
-                    </span>
-                  )}
-                </span>
-                <span className="text-xs text-neutral-500">{v.blurb}</span>
-              </Link>
-            ))}
+                Home
+              </span>
+              <span
+                className="font-serif-display text-4xl sm:text-5xl tracking-tight transition-colors group-hover:[color:var(--accent)]"
+                style={{ color: "var(--ink)" }}
+              >
+                Back to overview
+              </span>
+            </Link>
+
+            {VISUALIZATIONS.map((v, i) => {
+              const live = v.status === "live";
+              return (
+                <Link
+                  key={v.slug}
+                  href={live ? `/visualizations/${v.slug}` : "#"}
+                  onClick={(e) => {
+                    if (!live) e.preventDefault();
+                    else setOpen(false);
+                  }}
+                  className="menu-item group flex items-baseline gap-6 py-6 border-b transition-colors"
+                  style={{
+                    borderColor: "var(--rule)",
+                    animationDelay: `${200 + i * 70}ms`,
+                    opacity: live ? 1 : 0.45,
+                    cursor: live ? "pointer" : "not-allowed",
+                  }}
+                >
+                  <span
+                    className="font-mono text-[11px] uppercase tracking-[0.28em] w-24"
+                    style={{ color: live ? "var(--accent)" : "var(--ink-faint)" }}
+                  >
+                    Study {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <div className="flex-1">
+                    <div
+                      className="font-serif-display text-4xl sm:text-5xl tracking-tight leading-[1.05] transition-colors group-hover:[color:var(--accent)]"
+                      style={{ color: "var(--ink)" }}
+                    >
+                      {v.title}
+                    </div>
+                    <div
+                      className="text-base sm:text-lg mt-2 max-w-xl"
+                      style={{ color: "var(--ink-soft)" }}
+                    >
+                      {v.blurb}
+                    </div>
+                  </div>
+                  <span
+                    className="hidden sm:inline font-mono text-[10px] uppercase tracking-[0.28em]"
+                    style={{ color: "var(--ink-faint)" }}
+                  >
+                    {live ? "→ Begin" : "Soon"}
+                  </span>
+                </Link>
+              );
+            })}
+
+            <div
+              className="menu-item mt-12 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.3em]"
+              style={{
+                color: "var(--ink-faint)",
+                animationDelay: `${260 + VISUALIZATIONS.length * 70}ms`,
+              }}
+            >
+              <span>{VISUALIZATIONS.length} of many planned</span>
+              <span>optex</span>
+            </div>
           </nav>
-        </>
+        </div>
       )}
-    </header>
+    </>
   );
 }

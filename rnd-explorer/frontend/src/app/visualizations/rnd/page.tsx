@@ -7,9 +7,10 @@ import Controls from "@/components/Controls";
 import Diagnostics from "@/components/Diagnostics";
 import { fetchExpiries, fetchRND } from "@/lib/api";
 import type { RNDResponse } from "@/lib/types";
-import { getVisualization } from "@/lib/visualizations";
+import { getVisualization, VISUALIZATIONS } from "@/lib/visualizations";
 
 const META = getVisualization("rnd")!;
+const INDEX = VISUALIZATIONS.findIndex((v) => v.slug === "rnd") + 1;
 
 export default function RNDPage() {
   const [ticker, setTicker] = useState("SPY");
@@ -67,53 +68,154 @@ export default function RNDPage() {
   }, [ticker, expiry, smoothing, rOverride]);
 
   return (
-    <main className="bg-black text-neutral-200 p-4 sm:p-6">
-      <header className="mb-4 flex flex-col gap-1">
-        <h1 className="font-mono text-lg text-emerald-400">{META.title}</h1>
-        <p className="text-xs text-neutral-500 max-w-3xl">{META.description}</p>
+    <main className="px-6 sm:px-10">
+      {/* Title block */}
+      <header className="max-w-6xl mx-auto pt-12 sm:pt-20 pb-14">
+        <div className="grid grid-cols-12 gap-x-4 sm:gap-x-8">
+          <aside
+            className="col-span-12 sm:col-span-3 mb-6 sm:mb-0 reveal"
+            style={{ animationDelay: "40ms" }}
+          >
+            <div
+              className="font-mono text-[10px] uppercase tracking-[0.3em]"
+              style={{ color: "var(--accent)" }}
+            >
+              Study {String(INDEX).padStart(2, "0")}
+            </div>
+            <div
+              className="font-mono text-[10px] uppercase tracking-[0.3em] mt-2 inline-flex items-center gap-2"
+              style={{ color: "var(--ink-faint)" }}
+            >
+              <span
+                className="inline-block w-1.5 h-1.5 rounded-full"
+                style={{
+                  backgroundColor: "var(--accent)",
+                  boxShadow: "0 0 10px var(--accent-glow)",
+                }}
+              />
+              Live · interactive
+            </div>
+            <div
+              className="hidden sm:block mt-8 h-10 w-px"
+              style={{ backgroundColor: "var(--rule-strong)" }}
+            />
+            <div
+              className="hidden sm:block mt-8 font-mono text-[10px] uppercase tracking-[0.28em] leading-relaxed max-w-[12rem]"
+              style={{ color: "var(--ink-faint)" }}
+            >
+              Topic — Risk-neutral
+              <br />
+              pricing · Smoothing
+            </div>
+          </aside>
+
+          <div className="col-span-12 sm:col-span-9">
+            <h1
+              className="font-serif-display text-[clamp(2.5rem,6.5vw,5.5rem)] leading-[0.94] tracking-[-0.02em] reveal"
+              style={{ color: "var(--ink)", animationDelay: "100ms" }}
+            >
+              {META.title}
+              <span style={{ color: "var(--accent)" }}>.</span>
+            </h1>
+
+            <p
+              className="mt-7 font-serif-italic text-xl sm:text-2xl leading-snug max-w-3xl reveal"
+              style={{ color: "var(--ink-soft)", animationDelay: "200ms" }}
+            >
+              {META.blurb}
+            </p>
+
+            <p
+              className="mt-6 text-[15px] sm:text-base leading-relaxed max-w-3xl reveal"
+              style={{ color: "var(--ink-soft)", animationDelay: "280ms" }}
+            >
+              {META.description}
+            </p>
+          </div>
+        </div>
       </header>
 
-      <Controls
-        ticker={ticker}
-        setTicker={updateTicker}
-        expiries={expiries}
-        expiry={expiry}
-        setExpiry={setExpiry}
-        smoothing={smoothing}
-        setSmoothing={setSmoothing}
-        rOverride={rOverride}
-        setROverride={setROverride}
-        loading={loading}
-        onLoad={load}
-        error={error}
-      />
-
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4 mt-4">
-        <div className="flex flex-col gap-4">
-          {data ? (
-            <>
-              <IVChart d={data} />
-              <CallPriceChart d={data} />
-              <RNDChart d={data} />
-            </>
-          ) : (
-            <div className="border border-neutral-800 bg-neutral-950 p-12 text-center text-neutral-500 font-mono text-sm">
-              {loading ? "fetching chain..." : "select an expiry and press load."}
-            </div>
-          )}
-        </div>
-
-        <div>
-          {data && (
-            <Diagnostics
-              diag={data.diagnostics}
-              spot={data.spot}
-              T={data.T}
-              r={data.r}
-            />
-          )}
+      {/* Section divider */}
+      <div
+        className="max-w-6xl mx-auto reveal"
+        style={{ animationDelay: "340ms" }}
+      >
+        <div className="flex items-baseline gap-4">
+          <span
+            className="font-mono text-[11px] uppercase tracking-[0.3em]"
+            style={{ color: "var(--ink-faint)" }}
+          >
+            The Workbench
+          </span>
+          <span
+            className="flex-1 h-px"
+            style={{ backgroundColor: "var(--rule)" }}
+          />
+          <span
+            className="font-mono text-[11px] uppercase tracking-[0.3em]"
+            style={{ color: "var(--ink-faint)" }}
+          >
+            Live data · yfinance
+          </span>
         </div>
       </div>
+
+      {/* Working area */}
+      <section
+        className="max-w-6xl mx-auto pb-28 pt-8 reveal"
+        style={{ animationDelay: "420ms" }}
+      >
+        <Controls
+          ticker={ticker}
+          setTicker={updateTicker}
+          expiries={expiries}
+          expiry={expiry}
+          setExpiry={setExpiry}
+          smoothing={smoothing}
+          setSmoothing={setSmoothing}
+          rOverride={rOverride}
+          setROverride={setROverride}
+          loading={loading}
+          onLoad={load}
+          error={error}
+        />
+
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4 mt-4">
+          <div className="flex flex-col gap-4">
+            {data ? (
+              <>
+                <IVChart d={data} />
+                <CallPriceChart d={data} />
+                <RNDChart d={data} />
+              </>
+            ) : (
+              <div
+                className="border p-12 text-center font-serif-italic text-lg"
+                style={{
+                  borderColor: "var(--rule)",
+                  backgroundColor: "var(--bg-panel)",
+                  color: "var(--ink-faint)",
+                }}
+              >
+                {loading
+                  ? "fetching the chain…"
+                  : "Choose an expiry and press load to begin."}
+              </div>
+            )}
+          </div>
+
+          <div>
+            {data && (
+              <Diagnostics
+                diag={data.diagnostics}
+                spot={data.spot}
+                T={data.T}
+                r={data.r}
+              />
+            )}
+          </div>
+        </div>
+      </section>
     </main>
   );
 }

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Fraunces, Geist, Geist_Mono } from "next/font/google";
 
 import Header from "@/components/Header";
 
@@ -15,24 +15,31 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  axes: ["SOFT", "WONK", "opsz"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "optex",
-  description: "Interactive visualizations for options markets.",
+  title: "optex — readings in the options market",
+  description:
+    "A small library of interactive instruments for reading options markets — implied volatility, risk-neutral densities, and the structure beneath the noise.",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-black">
+      <body className="min-h-full flex flex-col">
         <Header />
-        <div className="flex-1">{children}</div>
+        <div className="flex-1 relative z-10">{children}</div>
       </body>
     </html>
   );
