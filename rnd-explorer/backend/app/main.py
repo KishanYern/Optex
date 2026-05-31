@@ -1,6 +1,8 @@
 """FastAPI entrypoint for the RND explorer."""
 from __future__ import annotations
 
+import os
+
 import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,9 +14,19 @@ from .rnd import extract_rnd
 
 app = FastAPI(title="rnd-explorer")
 
+# CORS: comma-separated list of allowed origins. Defaults to local dev.
+# In prod, set CORS_ORIGINS to your Vercel URL(s), e.g.
+#   CORS_ORIGINS=https://rnd-explorer.vercel.app,https://*.vercel.app
+_origins_env = os.getenv("CORS_ORIGINS", "http://localhost:3000")
+_origins = [o.strip() for o in _origins_env.split(",") if o.strip()]
+# Always allow Vercel preview URLs (https://<branch>-<scope>.vercel.app) so
+# branch/PR previews work without listing each one in CORS_ORIGINS.
+_origin_regex = r"https://.*\.vercel\.app$"
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=_origins,
+    allow_origin_regex=_origin_regex,
     allow_methods=["*"],
     allow_headers=["*"],
 )

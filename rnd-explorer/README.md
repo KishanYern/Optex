@@ -6,6 +6,11 @@ Pulls a call/put chain for one expiry, smooths implied vol across strikes with a
 cubic spline, reprices on a dense K grid, and takes the discrete second
 derivative of C(K) to recover the risk-neutral density f(S_T).
 
+## Deployment
+
+Backend on Render, frontend on Vercel, auto-deployed on push to `main`
+once CI is green (see `.github/workflows/deploy.yml`).
+
 ## Stack
 
 - **Backend:** Python, FastAPI, yfinance, NumPy, SciPy

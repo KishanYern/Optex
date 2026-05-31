@@ -1,0 +1,20 @@
+# Render Blueprint. Sync from the Render dashboard once via:
+#   New + -> Blueprint -> select this repo.
+# After that, deploys are triggered via the deploy-hook URL called from
+# GitHub Actions (see .github/workflows/deploy.yml), not on every push.
+services:
+  - type: web
+    name: rnd-backend
+    runtime: docker
+    repo: https://github.com/KishanYern/Optex
+    branch: main
+    rootDir: rnd-explorer/backend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    autoDeploy: false
+    healthCheckPath: /health
+    envVars:
+      # Set this in the Render dashboard once you know the Vercel URL.
+      # Wildcard preview URLs are matched by the regex fallback in main.py.
+      - key: CORS_ORIGINS
+        sync: false

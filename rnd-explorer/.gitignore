@@ -11,6 +11,12 @@ node_modules/
 out/
 npm-debug.log*
 
+# Vercel
+.vercel/
+
+# Personal setup notes (kept local, not pushed)
+DEPLOYMENT.md
+
 # OS
 .DS_Store
 Thumbs.db
