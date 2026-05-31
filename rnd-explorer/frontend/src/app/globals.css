@@ -141,3 +141,15 @@ input[type="range"] {
   outline-offset: 3px;
   border-radius: 1px;
 }
+
+/* Restore button cursor — Tailwind v4 + browser defaults leave buttons
+   with cursor:default, which makes them feel non-interactive. */
+button:not(:disabled),
+[role="button"]:not(:disabled),
+summary {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
