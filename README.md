@@ -19,22 +19,21 @@ once CI is green (see `.github/workflows/deploy.yml`).
 ## Layout
 
 ```
-rnd-explorer/
-  backend/
-    app/
-      main.py          FastAPI entrypoint and routes
-      data.py          yfinance chain fetch, spot, risk-free rate
-      iv.py            Black-Scholes pricing and IV solver
-      rnd.py           IV-space spline, RND extraction
-      diagnostics.py   Arbitrage checks, fit quality
-    requirements.txt
-  frontend/
-    (Next.js app)
+backend/
+  app/
+    main.py          FastAPI entrypoint and routes
+    data.py          yfinance chain fetch, spot, risk-free rate
+    iv.py            Black-Scholes pricing and IV solver
+    rnd.py           IV-space spline, RND extraction
+    diagnostics.py   Arbitrage checks, fit quality
+  requirements.txt
+frontend/
+  (Next.js app)
 ```
 
 ## Run locally with one command
 
-From `rnd-explorer/`:
+From the repo root:
 
 ```
 pwsh dev.ps1
