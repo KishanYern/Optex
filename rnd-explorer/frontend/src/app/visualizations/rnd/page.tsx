@@ -22,6 +22,26 @@ export default function RNDPage() {
   const [data, setData] = useState<RNDResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expiriesLoading, setExpiriesLoading] = useState(false);
+  const [expiriesError, setExpiriesError] = useState<string | null>(null);
+  const [expiriesTicker, setExpiriesTicker] = useState<string | null>(null);
+
+  const loadExpiries = useCallback((t: string) => {
+    setExpiriesLoading(true);
+    setExpiriesError(null);
+    fetchExpiries(t)
+      .then((res) => {
+        setExpiries(res.expiries);
+        setExpiriesTicker(t);
+        if (res.expiries.length > 0) {
+          setExpiry(res.expiries[Math.min(2, res.expiries.length - 1)]);
+        }
+      })
+      .catch((e: Error) => {
+        setExpiriesError(e.message);
+      })
+      .finally(() => setExpiriesLoading(false));
+  }, []);
 
   const updateTicker = useCallback((next: string) => {
     setTicker(next);
@@ -29,26 +49,14 @@ export default function RNDPage() {
     setExpiry(null);
     setData(null);
     setError(null);
+    setExpiriesError(null);
+    setExpiriesTicker(null);
   }, []);
 
   useEffect(() => {
     if (!ticker) return;
-    let cancelled = false;
-    fetchExpiries(ticker)
-      .then((res) => {
-        if (cancelled) return;
-        setExpiries(res.expiries);
-        if (res.expiries.length > 0) {
-          setExpiry(res.expiries[Math.min(2, res.expiries.length - 1)]);
-        }
-      })
-      .catch((e: Error) => {
-        if (!cancelled) setError(e.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [ticker]);
+    loadExpiries(ticker);
+  }, [ticker, loadExpiries]);
 
   const load = useCallback(async () => {
     if (!expiry) return;
@@ -179,6 +187,10 @@ export default function RNDPage() {
           loading={loading}
           onLoad={load}
           error={error}
+          expiriesLoading={expiriesLoading}
+          expiriesError={expiriesError}
+          onRetryExpiries={() => loadExpiries(ticker)}
+          expiriesTicker={expiriesTicker}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4 mt-4">
@@ -200,7 +212,11 @@ export default function RNDPage() {
               >
                 {loading
                   ? "fetching the chain…"
-                  : "Choose an expiry and press load to begin."}
+                  : expiriesLoading
+                    ? "loading expiries…"
+                    : expiriesError
+                      ? "Fix the error above, then choose an expiry and press Load."
+                      : "Choose an expiry and press Load."}
               </div>
             )}
           </div>

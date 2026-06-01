@@ -15,6 +15,10 @@ type Props = {
   loading: boolean;
   onLoad: () => void;
   error: string | null;
+  expiriesLoading: boolean;
+  expiriesError: string | null;
+  onRetryExpiries: () => void;
+  expiriesTicker: string | null;
 };
 
 const FIELD_LABEL =
@@ -23,6 +27,9 @@ const INPUT_BASE =
   "w-full h-9 px-3 font-mono text-sm focus:outline-none transition-colors";
 
 export default function Controls(props: Props) {
+  const {
+    expiriesLoading, expiriesError, onRetryExpiries, expiriesTicker,
+  } = props;
   const [tickerInput, setTickerInput] = useState(props.ticker);
 
   const submitTicker = (e: React.FormEvent) => {
@@ -70,12 +77,17 @@ export default function Controls(props: Props) {
             htmlFor="ctrl-expiry"
           >
             Expiry
+            {expiriesLoading && (
+              <span className="ml-2" style={{ color: "var(--accent)" }}>
+                loading…
+              </span>
+            )}
           </label>
           <select
             id="ctrl-expiry"
             value={props.expiry ?? ""}
             onChange={(e) => props.setExpiry(e.target.value)}
-            disabled={!props.expiries.length}
+            disabled={!props.expiries.length || expiriesLoading}
             className={`${INPUT_BASE} disabled:opacity-40`}
             style={{
               backgroundColor: "var(--bg-deep)",
@@ -83,7 +95,17 @@ export default function Controls(props: Props) {
               color: "var(--ink)",
             }}
           >
-            {props.expiries.length === 0 && <option value="">—</option>}
+            {props.expiries.length === 0 && (
+              <option value="">
+                {expiriesLoading
+                  ? "fetching expiries…"
+                  : expiriesError
+                    ? "failed to load"
+                    : expiriesTicker
+                      ? "no expiries found"
+                      : "enter a ticker"}
+              </option>
+            )}
             {props.expiries.map((e) => (
               <option key={e} value={e}>
                 {e}
@@ -177,6 +199,29 @@ export default function Controls(props: Props) {
         </div>
       </div>
 
+      {expiriesError && (
+        <div
+          className="mt-4 font-mono text-[12px] px-3 py-2 border flex items-center justify-between gap-4"
+          style={{
+            color: "#FCA5A5",
+            backgroundColor: "rgba(127, 29, 29, 0.18)",
+            borderColor: "rgba(220, 38, 38, 0.45)",
+          }}
+        >
+          <span>Could not load expiries: {expiriesError}</span>
+          <button
+            onClick={onRetryExpiries}
+            className="shrink-0 font-mono text-[10px] uppercase tracking-[0.2em] px-3 py-1 transition-opacity hover:opacity-70"
+            style={{
+              backgroundColor: "rgba(220, 38, 38, 0.25)",
+              border: "1px solid rgba(220, 38, 38, 0.45)",
+              color: "#FCA5A5",
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      )}
       {props.error && (
         <div
           className="mt-4 font-mono text-[12px] px-3 py-2 border"
