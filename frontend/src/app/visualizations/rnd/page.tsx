@@ -22,26 +22,14 @@ export default function RNDPage() {
   const [data, setData] = useState<RNDResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [expiriesLoading, setExpiriesLoading] = useState(false);
+  // Start true: the effect fires on mount and begins fetching immediately.
+  // Loading state is set to true in event handlers (ticker change, retry) so
+  // the effect body never calls setState synchronously.
+  const [expiriesLoading, setExpiriesLoading] = useState(true);
   const [expiriesError, setExpiriesError] = useState<string | null>(null);
   const [expiriesTicker, setExpiriesTicker] = useState<string | null>(null);
-
-  const loadExpiries = useCallback((t: string) => {
-    setExpiriesLoading(true);
-    setExpiriesError(null);
-    fetchExpiries(t)
-      .then((res) => {
-        setExpiries(res.expiries);
-        setExpiriesTicker(t);
-        if (res.expiries.length > 0) {
-          setExpiry(res.expiries[Math.min(2, res.expiries.length - 1)]);
-        }
-      })
-      .catch((e: Error) => {
-        setExpiriesError(e.message);
-      })
-      .finally(() => setExpiriesLoading(false));
-  }, []);
+  // Incrementing this triggers a retry of the expiry fetch without changing ticker.
+  const [expiriesKey, setExpiriesKey] = useState(0);
 
   const updateTicker = useCallback((next: string) => {
     setTicker(next);
@@ -49,14 +37,40 @@ export default function RNDPage() {
     setExpiry(null);
     setData(null);
     setError(null);
+    setExpiriesLoading(true);
     setExpiriesError(null);
     setExpiriesTicker(null);
   }, []);
 
+  const retryExpiries = useCallback(() => {
+    setExpiriesLoading(true);
+    setExpiriesError(null);
+    setExpiriesKey((k) => k + 1);
+  }, []);
+
+  // Effect only sets state inside async callbacks — never synchronously.
   useEffect(() => {
     if (!ticker) return;
-    loadExpiries(ticker);
-  }, [ticker, loadExpiries]);
+    let cancelled = false;
+    fetchExpiries(ticker)
+      .then((res) => {
+        if (cancelled) return;
+        setExpiries(res.expiries);
+        setExpiriesTicker(ticker);
+        setExpiriesLoading(false);
+        if (res.expiries.length > 0) {
+          setExpiry(res.expiries[Math.min(2, res.expiries.length - 1)]);
+        }
+      })
+      .catch((e: Error) => {
+        if (cancelled) return;
+        setExpiriesError(e.message);
+        setExpiriesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [ticker, expiriesKey]);
 
   const load = useCallback(async () => {
     if (!expiry) return;
@@ -189,7 +203,7 @@ export default function RNDPage() {
           error={error}
           expiriesLoading={expiriesLoading}
           expiriesError={expiriesError}
-          onRetryExpiries={() => loadExpiries(ticker)}
+          onRetryExpiries={retryExpiries}
           expiriesTicker={expiriesTicker}
         />
 
