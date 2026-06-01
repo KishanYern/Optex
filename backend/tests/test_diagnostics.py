@@ -1,8 +1,8 @@
 import numpy as np
 
-from app.diagnostics import (check_convexity, check_monotonicity,
-                             compute_diagnostics, density_integral)
-from app.rnd import extract_rnd
+from app.studies.rnd.diagnostics import (check_convexity, check_monotonicity,
+                                         compute_diagnostics, density_integral)
+from app.studies.rnd.extract import extract_rnd
 from tests.test_rnd import _make_flat_vol_chain
 
 

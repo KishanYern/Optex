@@ -1,18 +1,21 @@
-"""FastAPI entrypoint for the RND explorer."""
+"""FastAPI entrypoint.
+
+Owns the app, CORS, and the shared market-data endpoints (/health, /rate,
+/expiries, /chain) that every study reuses. Each study contributes its own
+router under app/studies/<name>/router.py; register them here via
+include_router.
+"""
 from __future__ import annotations
 
 import os
 
-import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from scipy.interpolate import UnivariateSpline
 
-from .data import get_chain, get_risk_free_rate, list_expiries, year_fraction
-from .diagnostics import compute_diagnostics
-from .rnd import extract_rnd
+from .data import get_chain, get_risk_free_rate, list_expiries
+from .studies.rnd.router import router as rnd_router
 
-app = FastAPI(title="rnd-explorer")
+app = FastAPI(title="optex")
 
 # CORS: comma-separated list of allowed origins. Defaults to local dev.
 # In prod, set CORS_ORIGINS to your Vercel URL(s), e.g.
@@ -30,6 +33,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Study routers. Add a new study by including its router here.
+app.include_router(rnd_router)
 
 
 @app.get("/health")
@@ -69,41 +75,4 @@ def chain(ticker: str, expiry: str, r: float | None = None) -> dict:
         "r": ch.r,
         "calls": ch.calls.to_dict(orient="records"),
         "puts": ch.puts.to_dict(orient="records"),
-    }
-
-
-@app.get("/rnd/{ticker}/{expiry}")
-def rnd(ticker: str, expiry: str, r: float | None = None,
-        smoothing: float = 0.0, n_grid: int = 400) -> dict:
-    try:
-        ch = get_chain(ticker, expiry, r_override=r)
-        result = extract_rnd(ch, smoothing=smoothing, n_grid=n_grid)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=str(e))
-
-    # Re-evaluate spline at raw strikes for the RMSE residual diagnostic.
-    spline = UnivariateSpline(result.iv_raw_K, result.iv_raw, k=3,
-                              s=smoothing * len(result.iv_raw_K))
-    iv_at_raw = spline(result.iv_raw_K)
-    diag = compute_diagnostics(result, iv_at_raw)
-
-    return {
-        "ticker": ch.ticker,
-        "expiry": ch.expiry,
-        "spot": result.spot,
-        "T": result.T,
-        "r": result.r,
-        "K_grid": result.K_grid.tolist(),
-        "iv_smoothed": result.iv_smoothed.tolist(),
-        "iv_raw_K": result.iv_raw_K.tolist(),
-        "iv_raw": result.iv_raw.tolist(),
-        "C_smoothed": result.C_smoothed.tolist(),
-        "C_raw_K": result.C_raw_K.tolist(),
-        "C_raw": result.C_raw.tolist(),
-        "rnd": result.rnd.tolist(),
-        "rnd_raw_K": result.C_raw_K.tolist(),
-        "rnd_raw": [None if not np.isfinite(x) else float(x) for x in result.rnd_raw],
-        "diagnostics": diag.as_dict(),
     }

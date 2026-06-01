@@ -11,7 +11,7 @@ import pytest
 
 from app.data import Chain
 from app.iv import bs_call, bs_put
-from app.rnd import extract_rnd, synthetic_call_curve
+from app.studies.rnd.extract import extract_rnd, synthetic_call_curve
 
 
 def _make_flat_vol_chain(S=100.0, T=0.5, r=0.04, sigma=0.25,

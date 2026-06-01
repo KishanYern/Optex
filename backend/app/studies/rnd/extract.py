@@ -18,8 +18,8 @@ from dataclasses import dataclass
 import numpy as np
 from scipy.interpolate import UnivariateSpline
 
-from .data import Chain
-from .iv import bs_call, implied_vol
+from ...data import Chain
+from ...iv import bs_call, implied_vol
 
 
 @dataclass

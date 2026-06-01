@@ -5,7 +5,7 @@ from dataclasses import asdict, dataclass
 
 import numpy as np
 
-from .rnd import RNDResult
+from .extract import RNDResult
 
 
 @dataclass

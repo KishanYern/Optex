@@ -52,7 +52,7 @@ def test_chain_endpoint():
 
 
 def test_rnd_endpoint_shape_and_diagnostics():
-    with patch("app.main.get_chain", return_value=_fake_chain()):
+    with patch("app.studies.rnd.router.get_chain", return_value=_fake_chain()):
         r = client.get("/rnd/FAKE/2099-01-01")
     assert r.status_code == 200
     body = r.json()

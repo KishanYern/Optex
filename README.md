@@ -21,15 +21,29 @@ once CI is green (see `.github/workflows/deploy.yml`).
 ```
 backend/
   app/
-    main.py          FastAPI entrypoint and routes
-    data.py          yfinance chain fetch, spot, risk-free rate
-    iv.py            Black-Scholes pricing and IV solver
-    rnd.py           IV-space spline, RND extraction
-    diagnostics.py   Arbitrage checks, fit quality
+    main.py          FastAPI app + shared market-data routes (/health, /rate,
+                     /expiries, /chain); includes each study's router
+    data.py          yfinance chain fetch, spot, risk-free rate (shared)
+    iv.py            Black-Scholes pricing and IV solver (shared)
+    studies/
+      rnd/           Risk-neutral density study
+        router.py    /rnd endpoint
+        extract.py   IV-space spline, RND extraction
+        diagnostics.py  Arbitrage checks, fit quality
   requirements.txt
 frontend/
-  (Next.js app)
+  src/
+    app/
+      page.tsx                       home (study grid)
+      visualizations/<slug>/page.tsx one page per study
+    lib/visualizations.ts            study registry (single source of truth)
+    components/                      shared UI
 ```
+
+**Adding a study.** Backend: create `app/studies/<name>/` with a `router.py`
+exposing `router = APIRouter(...)`, then `include_router` it in `app/main.py`;
+reuse `app.data` / `app.iv`. Frontend: add an entry to `lib/visualizations.ts`
+and a `visualizations/<slug>/page.tsx`.
 
 ## Run locally with one command
 
