@@ -57,23 +57,32 @@ export default function Header() {
             </span>
           </Link>
 
-          <button
-            type="button"
-            aria-label={open ? "Close index" : "Open index"}
-            aria-expanded={open}
-            onClick={() => setOpen((v) => !v)}
-            className="group flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.28em] transition-colors"
-            style={{ color: open ? "var(--accent)" : "var(--ink-soft)" }}
-          >
-            <span
-              className="inline-block h-px transition-all"
-              style={{
-                backgroundColor: "currentColor",
-                width: open ? "2.5rem" : "1.5rem",
-              }}
-            />
-            {open ? "Close" : "Index"}
-          </button>
+          <div className="flex items-center gap-6">
+            <Link
+              href="/learn"
+              className="font-mono text-[11px] uppercase tracking-[0.28em] transition-colors hover:[color:var(--accent)]"
+              style={{ color: "var(--ink-soft)" }}
+            >
+              Learn
+            </Link>
+            <button
+              type="button"
+              aria-label={open ? "Close index" : "Open index"}
+              aria-expanded={open}
+              onClick={() => setOpen((v) => !v)}
+              className="group flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.28em] transition-colors"
+              style={{ color: open ? "var(--accent)" : "var(--ink-soft)" }}
+            >
+              <span
+                className="inline-block h-px transition-all"
+                style={{
+                  backgroundColor: "currentColor",
+                  width: open ? "2.5rem" : "1.5rem",
+                }}
+              />
+              {open ? "Close" : "Index"}
+            </button>
+          </div>
         </div>
       </header>
 
