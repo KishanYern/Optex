@@ -2,9 +2,14 @@
 
 yfinance scrapes Yahoo's unofficial endpoints, which rate-limit IPs hard
 (especially on shared cloud hosts). We mitigate with:
+  * a shared curl_cffi session passed to every Ticker() call — yfinance
+    creates a new Chrome-impersonating session per Ticker by default, so
+    repeated auth handshakes to Yahoo are the primary rate-limit trigger.
+    One shared session reuses the cookie across all requests.
   * a tiny in-memory TTL cache, keyed by (ticker, expiry, function).
     Same chain re-fetched within TTL_SECONDS just returns the cached object.
-  * one bounded retry with jittered backoff for transient errors.
+  * one bounded retry with jitter for transient (non-rate-limit) errors.
+    YFRateLimitError is not retried — rate limits don't clear in seconds.
 """
 from __future__ import annotations
 
@@ -18,6 +23,15 @@ from typing import Any, Callable, TypeVar
 import numpy as np
 import pandas as pd
 import yfinance as yf
+from curl_cffi import requests as _curl_requests
+from yfinance.exceptions import YFRateLimitError
+
+
+# One shared Chrome-impersonating session for all yfinance calls.
+# yfinance creates a new session per Ticker() by default, which means every
+# request triggers a fresh Yahoo auth handshake — the primary rate-limit
+# trigger on cloud-hosted IPs. A single shared session reuses the cookie.
+_yf_session = _curl_requests.Session(impersonate="chrome")
 
 
 @dataclass
@@ -58,11 +72,17 @@ def _cached(key: str, ttl: int, fn: Callable[[], T_]) -> T_:
 
 
 def _with_retry(fn: Callable[[], T_], attempts: int = 2) -> T_:
-    """One retry with jitter for transient yfinance errors."""
+    """One retry with jitter for transient yfinance errors.
+
+    YFRateLimitError is never retried — Yahoo rate limits don't clear in
+    seconds, so retrying just adds delay and burns another request quota.
+    """
     last_exc: Exception | None = None
     for i in range(attempts):
         try:
             return fn()
+        except YFRateLimitError as e:
+            raise _humanize(e)
         except Exception as e:  # noqa: BLE001 — yfinance raises bare Exceptions
             last_exc = e
             msg = str(e).lower()
@@ -76,12 +96,18 @@ def _with_retry(fn: Callable[[], T_], attempts: int = 2) -> T_:
 
 
 def _humanize(e: Exception) -> Exception:
-    """Map yfinance's vague errors into something useful for the UI."""
+    """Map yfinance errors into UI-friendly messages (no 'yfinance error:' prefix —
+    the API layer adds that to avoid double-prefixing)."""
+    if isinstance(e, YFRateLimitError):
+        return RuntimeError(
+            "Yahoo Finance is rate-limiting this server's IP. "
+            "Try again in a few minutes, or start the backend locally."
+        )
     msg = str(e)
     low = msg.lower()
     if "too many requests" in low or "rate limit" in low or "429" in low:
         return RuntimeError(
-            "yfinance error: Too Many Requests. Rate limited. Try again in a minute."
+            "Yahoo Finance rate limit hit — try again in a minute."
         )
     if "no data" in low or "expecting value" in low:
         return RuntimeError("yfinance returned no data — ticker may be invalid.")
@@ -91,7 +117,7 @@ def _humanize(e: Exception) -> Exception:
 def list_expiries(ticker: str) -> list[str]:
     key = f"exp:{ticker.upper()}"
     return _cached(key, TTL_EXPIRIES, lambda: _with_retry(
-        lambda: list(yf.Ticker(ticker).options)
+        lambda: list(yf.Ticker(ticker, session=_yf_session).options)
     ))
 
 
@@ -101,7 +127,7 @@ def get_spot(ticker: str) -> float:
 
 
 def _fetch_spot(ticker: str) -> float:
-    tk = yf.Ticker(ticker)
+    tk = yf.Ticker(ticker, session=_yf_session)
     try:
         s = float(tk.fast_info["last_price"])
         if s > 0:
@@ -122,7 +148,7 @@ def get_risk_free_rate(T: float) -> float:
 
 def _fetch_irx() -> float:
     try:
-        irx = yf.Ticker("^IRX").history(period="5d")
+        irx = yf.Ticker("^IRX", session=_yf_session).history(period="5d")
         if not irx.empty:
             pct = float(irx["Close"].dropna().iloc[-1])
             simple = pct / 100.0
@@ -155,7 +181,7 @@ def _clean(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _fetch_chain(ticker: str, expiry: str) -> tuple[pd.DataFrame, pd.DataFrame]:
-    opt = yf.Ticker(ticker).option_chain(expiry)
+    opt = yf.Ticker(ticker, session=_yf_session).option_chain(expiry)
     return _clean(opt.calls), _clean(opt.puts)
 
 

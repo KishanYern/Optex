@@ -53,7 +53,7 @@ def expiries(ticker: str) -> dict:
     try:
         exps = list_expiries(ticker)
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"yfinance error: {e}")
+        raise HTTPException(status_code=502, detail=str(e))
     if not exps:
         raise HTTPException(status_code=404, detail=f"no expiries for {ticker}")
     return {"ticker": ticker.upper(), "expiries": exps}
