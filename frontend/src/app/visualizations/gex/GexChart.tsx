@@ -14,9 +14,8 @@ type StrikeRow = {
 };
 
 export default function GexChart({ d }: { d: GexChainResponse }) {
-  if (!d) return null;
-
   const rows = useMemo(() => {
+    if (!d) return [];
     const strikes = new Set([
       ...d.calls.map((c) => c.strike),
       ...d.puts.map((p) => p.strike),

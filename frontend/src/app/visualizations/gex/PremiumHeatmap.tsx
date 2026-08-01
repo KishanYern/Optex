@@ -24,9 +24,11 @@ function fmtGex(v: number): string {
 }
 
 export default function PremiumHeatmap({ data }: { data: HeatmapResponse }) {
-  if (!data || !data.heatmap || data.heatmap.length === 0) return null;
-
   const { expiries, strikes, grid, maxAbsGex } = useMemo(() => {
+    if (!data || !data.heatmap || data.heatmap.length === 0) {
+      return { expiries: [], strikes: [], grid: {}, maxAbsGex: 0 };
+    }
+
     const exps = Array.from(new Set(data.heatmap.map((d) => d.expiry))).sort();
     // Reduce strike density — take every Nth strike so we get ≤ 30 rows
     const allStrikes = Array.from(

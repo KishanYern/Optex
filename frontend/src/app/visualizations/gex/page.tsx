@@ -94,6 +94,7 @@ export default function GEXPage() {
 
   // Auto-load when expiry changes (e.g. after switching tickers)
   useEffect(() => {
+    // eslint-disable-next-line
     if (expiry) load();
   }, [expiry, load]);
 
