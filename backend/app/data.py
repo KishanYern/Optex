@@ -35,6 +35,7 @@ import httpx
 import numpy as np
 import pandas as pd
 
+
 # Alpaca endpoints. Market data lives on data.alpaca.markets; the option
 # *contracts* catalog (used to enumerate expirations) lives on the trading API.
 _DATA_BASE = os.getenv("ALPACA_DATA_BASE", "https://data.alpaca.markets")
@@ -272,21 +273,6 @@ def _fetch_chain(ticker: str, expiry: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     calls = pd.DataFrame(call_rows, columns=cols)
     puts = pd.DataFrame(put_rows, columns=cols)
 
-    # Augment with yfinance for volume and openInterest if available
-    try:
-        import yfinance as yf
-        t = yf.Ticker(ticker.upper())
-        opt = t.option_chain(expiry)
-        
-        if not calls.empty and not opt.calls.empty:
-            yf_calls = opt.calls[['strike', 'volume', 'openInterest']]
-            calls = calls.drop(columns=['volume', 'openInterest']).merge(yf_calls, on='strike', how='left')
-            
-        if not puts.empty and not opt.puts.empty:
-            yf_puts = opt.puts[['strike', 'volume', 'openInterest']]
-            puts = puts.drop(columns=['volume', 'openInterest']).merge(yf_puts, on='strike', how='left')
-    except Exception as e:
-        print(f"yfinance augmentation failed for {ticker} {expiry}: {e}")
 
     return _clean(calls), _clean(puts)
 

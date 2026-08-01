@@ -180,7 +180,7 @@ export default function RNDPage() {
             className="font-mono text-[11px] uppercase tracking-[0.3em]"
             style={{ color: "var(--ink-faint)" }}
           >
-            Live data · yfinance
+            Live data · Alpaca
           </span>
         </div>
       </div>

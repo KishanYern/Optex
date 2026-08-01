@@ -55,6 +55,8 @@ export type GexChainResponse = {
 export type HeatmapItem = {
   expiry: string;
   strike: number;
+  type: string;
+  premium: number;
   gex: number;
 };
 

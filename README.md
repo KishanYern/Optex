@@ -13,7 +13,7 @@ once CI is green (see `.github/workflows/deploy.yml`).
 
 ## Stack
 
-- **Backend:** Python, FastAPI, yfinance, NumPy, SciPy
+- **Backend:** Python, FastAPI, Alpaca Market Data, NumPy, SciPy
 - **Frontend:** Next.js + React + Plotly
 
 ## Layout
@@ -23,7 +23,7 @@ backend/
   app/
     main.py          FastAPI app + shared market-data routes (/health, /rate,
                      /expiries, /chain); includes each study's router
-    data.py          yfinance chain fetch, spot, risk-free rate (shared)
+    data.py          Alpaca chain fetch, spot, risk-free rate (shared)
     iv.py            Black-Scholes pricing and IV solver (shared)
     studies/
       rnd/           Risk-neutral density study
