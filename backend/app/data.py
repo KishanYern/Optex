@@ -229,13 +229,51 @@ def _clean(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _fetch_open_interest(ticker: str, expiry: str) -> dict[tuple[float, str], float]:
+    """Fetch EOD open interest from Alpaca's option contracts catalog.
+
+    Returns a dict keyed by (strike, 'C'|'P') → open_interest.
+    The contracts endpoint includes an ``open_interest`` field that the
+    snapshot endpoint lacks."""
+    params: dict[str, Any] = {
+        "underlying_symbols": ticker.upper(),
+        "status": "active",
+        "expiration_date": expiry,
+        "limit": 10000,
+    }
+    oi_map: dict[tuple[float, str], float] = {}
+    token: str | None = None
+    for _ in range(10):
+        if token:
+            params["page_token"] = token
+        data = _get(_TRADING_BASE, "/v2/options/contracts", params)
+        for c in data.get("option_contracts") or []:
+            strike = float(c.get("strike_price", 0))
+            cp = c.get("type", "").upper()  # "call" or "put" → "C" or "P"
+            if cp.startswith("C"):
+                cp = "C"
+            elif cp.startswith("P"):
+                cp = "P"
+            else:
+                continue
+            oi = float(c.get("open_interest", 0) or 0)
+            oi_map[(strike, cp)] = oi
+        token = data.get("next_page_token")
+        if not token:
+            break
+    return oi_map
+
+
 def _fetch_chain(ticker: str, expiry: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Pull one expiry's option-chain snapshot and split into calls/puts.
 
     Alpaca keys snapshots by OCC symbol and gives a latest quote (bid/ask) and
-    latest trade (last price) per contract. Volume and open interest aren't in
-    the snapshot, so those columns stay NaN — ``_clean`` only needs a usable
-    mid, and the downstream study treats volume/OI as optional diagnostics."""
+    latest trade (last price) per contract. Open interest is fetched separately
+    from the contracts catalog endpoint (EOD values)."""
+    # Fetch OI from contracts catalog
+    oi_key = f"oi:{ticker.upper()}:{expiry}"
+    oi_map = _cached(oi_key, TTL_CHAIN, lambda: _fetch_open_interest(ticker, expiry))
+
     params: dict[str, Any] = {
         "feed": _OPTIONS_FEED,
         "expiration_date": expiry,
@@ -254,17 +292,19 @@ def _fetch_chain(ticker: str, expiry: str) -> tuple[pd.DataFrame, pd.DataFrame]:
             if not parsed:
                 continue
             strike = int(parsed["strike"]) / 1000.0
+            cp = parsed["cp"]  # "C" or "P"
             quote = (snap or {}).get("latestQuote") or {}
             trade = (snap or {}).get("latestTrade") or {}
+            oi = oi_map.get((strike, cp), 0.0)
             row = {
                 "strike": strike,
                 "bid": float(quote.get("bp") or 0.0),
                 "ask": float(quote.get("ap") or 0.0),
                 "lastPrice": float(trade.get("p") or 0.0),
                 "volume": np.nan,
-                "openInterest": np.nan,
+                "openInterest": oi,
             }
-            (call_rows if parsed["cp"] == "C" else put_rows).append(row)
+            (call_rows if cp == "C" else put_rows).append(row)
         token = data.get("next_page_token")
         if not token:
             break
@@ -272,7 +312,6 @@ def _fetch_chain(ticker: str, expiry: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     cols = _REQUIRED_COLS
     calls = pd.DataFrame(call_rows, columns=cols)
     puts = pd.DataFrame(put_rows, columns=cols)
-
 
     return _clean(calls), _clean(puts)
 

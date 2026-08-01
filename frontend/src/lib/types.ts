@@ -46,8 +46,8 @@ export type GexChainResponse = {
   ticker: string;
   expiry: string;
   spot: number;
-  call_wall: number;
-  put_wall: number;
+  call_wall: number | null;
+  put_wall: number | null;
   calls: GexItem[];
   puts: GexItem[];
 };

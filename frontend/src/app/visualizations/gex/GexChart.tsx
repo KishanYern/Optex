@@ -3,8 +3,9 @@
 import { useMemo } from "react";
 import type { GexChainResponse } from "@/lib/types";
 
-/** Show at most this many strikes (top N by absolute net GEX). */
+/** Keep the profile focused on the part of the chain that can matter near spot. */
 const MAX_STRIKES = 40;
+const STRIKE_WINDOW = 0.15;
 
 type StrikeRow = {
   strike: number;
@@ -20,13 +21,18 @@ export default function GexChart({ d }: { d: GexChainResponse }) {
       ...d.calls.map((c) => c.strike),
       ...d.puts.map((p) => p.strike),
     ]);
+    const callsByStrike = new Map(d.calls.map((call) => [call.strike, call]));
+    const putsByStrike = new Map(d.puts.map((put) => [put.strike, put]));
     const all: StrikeRow[] = Array.from(strikes)
+      .filter((strike) => Math.abs(strike - d.spot) / Math.max(d.spot, 1) <= STRIKE_WINDOW)
       .sort((a, b) => a - b)
       .map((k) => {
-        const callGex = d.calls.find((c) => c.strike === k)?.gex || 0;
-        const putGex = d.puts.find((p) => p.strike === k)?.gex || 0;
+        const callGex = callsByStrike.get(k)?.gex || 0;
+        const putGex = putsByStrike.get(k)?.gex || 0;
         return { strike: k, callGex, putGex, netGex: callGex + putGex };
       });
+
+    if (!all.some((row) => row.callGex !== 0 || row.putGex !== 0)) return [];
 
     // Keep only strikes with meaningful GEX — sort by |netGex| desc, take top N
     const sorted = [...all].sort(
@@ -106,12 +112,12 @@ export default function GexChart({ d }: { d: GexChainResponse }) {
         <StatCell label="Spot" value={`$${d.spot.toFixed(2)}`} />
         <StatCell
           label="Call Wall"
-          value={`$${d.call_wall.toFixed(0)}`}
+          value={d.call_wall == null ? "—" : `$${d.call_wall.toFixed(0)}`}
           accent="rgba(34, 197, 94, 0.9)"
         />
         <StatCell
           label="Put Wall"
-          value={`$${d.put_wall.toFixed(0)}`}
+          value={d.put_wall == null ? "—" : `$${d.put_wall.toFixed(0)}`}
           accent="rgba(239, 68, 68, 0.9)"
         />
         <StatCell
@@ -126,10 +132,24 @@ export default function GexChart({ d }: { d: GexChainResponse }) {
       </div>
 
       {/* Horizontal bar chart */}
+      {rows.length === 0 ? (
+        <div
+          className="border px-5 py-10 text-center font-mono text-[11px] uppercase tracking-[0.16em]"
+          style={{ borderColor: "var(--rule)", color: "var(--ink-faint)" }}
+        >
+          No non-zero GEX in the ±15% near-money range.
+          <span
+            className="block mt-2 normal-case tracking-normal font-sans text-sm"
+            style={{ color: "var(--ink-soft)" }}
+          >
+            Open interest or usable option quotes were not returned for this expiry.
+          </span>
+        </div>
+      ) : (
       <div className="space-y-[2px]">
         {rows.map((row) => {
-          const isCallWall = row.strike === d.call_wall;
-          const isPutWall = row.strike === d.put_wall;
+          const isCallWall = d.call_wall != null && row.strike === d.call_wall;
+          const isPutWall = d.put_wall != null && row.strike === d.put_wall;
           const isSpot =
             Math.abs(row.strike - d.spot) ===
             Math.min(...rows.map((r) => Math.abs(r.strike - d.spot)));
@@ -246,6 +266,7 @@ export default function GexChart({ d }: { d: GexChainResponse }) {
           );
         })}
       </div>
+      )}
     </div>
   );
 }

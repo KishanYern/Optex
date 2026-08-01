@@ -34,8 +34,8 @@ function analyzeGex(
 ): Insight[] {
   const insights: Insight[] = [];
   const spot = data.spot;
-  const callWall = data.call_wall;
-  const putWall = data.put_wall;
+  const callWall = data.call_wall ?? spot;
+  const putWall = data.put_wall ?? spot;
 
   const totalCallGex = data.calls.reduce((s, c) => s + c.gex, 0);
   const totalPutGex = data.puts.reduce((s, p) => s + p.gex, 0);
@@ -46,15 +46,25 @@ function analyzeGex(
   const putWallDist = ((spot - putWall) / spot) * 100;
   const positionBias =
     callWallDist < putWallDist ? "upside resistance" : "downside support";
-  insights.push({
+
+  if (data.call_wall != null && data.put_wall != null) {
+    insights.push({
     icon: "📍",
     title: "Market Positioning",
     body: `${data.ticker} is trading at ${formatCurrency(spot)}. The call wall sits ${callWallDist.toFixed(1)}% above spot at ${formatCurrency(callWall)}, while the put wall is ${putWallDist.toFixed(1)}% below at ${formatCurrency(putWall)}. Price is closer to ${positionBias} — ${callWallDist < putWallDist ? "dealers may pin the price below the call wall, limiting upside" : "there is more room to the upside before hitting resistance"}.`,
     color: "var(--accent)",
-  });
+    });
+  } else {
+    insights.push({
+      icon: "!",
+      title: "Wall data unavailable",
+      body: `${data.ticker} returned no usable near-money GEX for this expiry, so call and put walls are not reported.`,
+      color: "var(--ink-faint)",
+    });
+  }
 
   // 2. Key Levels
-  insights.push({
+  if (data.call_wall != null && data.put_wall != null) insights.push({
     icon: "🎯",
     title: "Key Levels",
     body: `Call wall at ${formatCurrency(callWall)} acts as a magnetic resistance level — market makers hedging here create a "ceiling" that absorbs rallies. Put wall at ${formatCurrency(putWall)} acts as a floor — dealer hedging accelerates buying on dips toward this level.`,
@@ -92,16 +102,18 @@ function analyzeGex(
   });
 
   // 4. Implied Range
-  const callWallPrice = formatCurrency(callWall);
-  const putWallPrice = formatCurrency(putWall);
-  const range = callWall - putWall;
-  const rangePct = ((range / spot) * 100).toFixed(1);
-  insights.push({
+  if (data.call_wall != null && data.put_wall != null) {
+    const callWallPrice = formatCurrency(callWall);
+    const putWallPrice = formatCurrency(putWall);
+    const range = callWall - putWall;
+    const rangePct = ((range / spot) * 100).toFixed(1);
+    insights.push({
     icon: "📐",
     title: "Implied Range",
     body: `Based on the GEX walls, the dealer-implied trading range is ${putWallPrice} – ${callWallPrice}, a ${rangePct}% band around spot. Price tends to oscillate within these walls unless a catalyst forces a breakout through one side.`,
     color: "var(--ink)",
-  });
+    });
+  }
 
   // 5. Heatmap insight (if available)
   if (heatmapData && heatmapData.heatmap.length > 0) {

@@ -19,6 +19,8 @@ type Props = {
   expiriesError: string | null;
   onRetryExpiries: () => void;
   expiriesTicker: string | null;
+  showSmoothing?: boolean;
+  showROverride?: boolean;
 };
 
 const FIELD_LABEL =
@@ -30,7 +32,10 @@ export default function Controls(props: Props) {
   const {
     expiriesLoading, expiriesError, onRetryExpiries, expiriesTicker,
   } = props;
+  const showSmoothing = props.showSmoothing ?? true;
+  const showROverride = props.showROverride ?? true;
   const [tickerInput, setTickerInput] = useState(props.ticker);
+  const tickerChanged = tickerInput.trim().toUpperCase() !== props.ticker;
 
   const submitTicker = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +52,10 @@ export default function Controls(props: Props) {
     >
       <div className="grid grid-cols-12 gap-4 sm:gap-5">
         {/* Ticker */}
-        <form onSubmit={submitTicker} className="col-span-6 sm:col-span-2">
+        <form
+          onSubmit={submitTicker}
+          className={`col-span-6 ${showSmoothing || showROverride ? "sm:col-span-2" : "sm:col-span-3"}`}
+        >
           <label
             className={FIELD_LABEL}
             style={{ color: "var(--ink-faint)" }}
@@ -70,7 +78,9 @@ export default function Controls(props: Props) {
         </form>
 
         {/* Expiry */}
-        <div className="col-span-6 sm:col-span-3">
+        <div
+          className={`col-span-6 ${showSmoothing || showROverride ? "sm:col-span-3" : "sm:col-span-5"}`}
+        >
           <label
             className={FIELD_LABEL}
             style={{ color: "var(--ink-faint)" }}
@@ -115,7 +125,7 @@ export default function Controls(props: Props) {
         </div>
 
         {/* Smoothing */}
-        <div className="col-span-12 sm:col-span-4">
+        {showSmoothing && <div className="col-span-12 sm:col-span-4">
           <label
             className={FIELD_LABEL}
             style={{ color: "var(--ink-faint)" }}
@@ -144,10 +154,10 @@ export default function Controls(props: Props) {
               className="w-full"
             />
           </div>
-        </div>
+        </div>}
 
         {/* r override */}
-        <div className="col-span-6 sm:col-span-2">
+        {showROverride && <div className="col-span-6 sm:col-span-2">
           <label
             className={FIELD_LABEL}
             style={{ color: "var(--ink-faint)" }}
@@ -177,23 +187,24 @@ export default function Controls(props: Props) {
               color: "var(--ink)",
             }}
           />
-        </div>
+        </div>}
 
         {/* Load button */}
-        <div className="col-span-6 sm:col-span-1 flex flex-col">
+        <div
+          className={`col-span-6 ${showSmoothing || showROverride ? "sm:col-span-1" : "sm:col-span-2"} flex flex-col`}
+        >
           <span className={FIELD_LABEL} aria-hidden style={{ color: "transparent" }}>
             &nbsp;
           </span>
           <button
             onClick={() => {
-              const trimmed = tickerInput.trim().toUpperCase();
-              if (trimmed && trimmed !== props.ticker) {
-                props.setTicker(trimmed);
+              if (tickerChanged) {
+                props.setTicker(tickerInput.trim().toUpperCase());
               } else {
                 props.onLoad();
               }
             }}
-            disabled={props.loading || !props.expiry}
+            disabled={props.loading || (!tickerChanged && !props.expiry)}
             className="h-9 font-mono text-[11px] uppercase tracking-[0.25em] transition-all disabled:opacity-40"
             style={{
               backgroundColor: "var(--accent)",
@@ -201,7 +212,7 @@ export default function Controls(props: Props) {
               border: "1px solid var(--accent)",
             }}
           >
-            {props.loading ? "…" : "Load"}
+            {props.loading ? "…" : tickerChanged ? "Set ticker" : "Load"}
           </button>
         </div>
       </div>

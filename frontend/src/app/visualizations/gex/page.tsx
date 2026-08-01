@@ -55,9 +55,6 @@ export default function GEXPage() {
         setExpiries(res.expiries);
         setExpiriesTicker(ticker);
         setExpiriesLoading(false);
-        if (res.expiries.length > 0) {
-          setExpiry(res.expiries[Math.min(2, res.expiries.length - 1)]);
-        }
       })
       .catch((e: Error) => {
         if (cancelled) return;
@@ -92,12 +89,6 @@ export default function GEXPage() {
     }
   }, [ticker, expiry]);
 
-  // Auto-load when expiry changes (e.g. after switching tickers)
-  useEffect(() => {
-    // eslint-disable-next-line
-    if (expiry) load();
-  }, [expiry, load]);
-
   return (
     <main className="px-6 sm:px-10">
       <header className="max-w-6xl mx-auto pt-12 sm:pt-20 pb-14">
@@ -128,7 +119,6 @@ export default function GEXPage() {
       </header>
 
       <section className="max-w-6xl mx-auto pb-28 pt-8 reveal" style={{ animationDelay: "420ms" }}>
-        {/* We reuse Controls, but hide smoothing as it's not used here */}
         <Controls
           ticker={ticker}
           setTicker={updateTicker}
@@ -146,6 +136,8 @@ export default function GEXPage() {
           expiriesError={expiriesError}
           onRetryExpiries={retryExpiries}
           expiriesTicker={expiriesTicker}
+          showSmoothing={false}
+          showROverride={false}
         />
 
         <div className="mt-4">
@@ -153,7 +145,7 @@ export default function GEXPage() {
             <div className="flex flex-col gap-4">
               <AISummary data={data} heatmapData={heatmapData} />
               <GexChart d={data} />
-              {heatmapData && <PremiumHeatmap data={heatmapData} />}
+              {heatmapData && <PremiumHeatmap data={heatmapData} spot={data.spot} />}
             </div>
           ) : (
             <div className="border p-12 text-center font-serif-italic text-lg" style={{ borderColor: "var(--rule)", backgroundColor: "var(--bg-panel)", color: "var(--ink-faint)" }}>

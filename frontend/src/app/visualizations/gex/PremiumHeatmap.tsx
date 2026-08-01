@@ -23,7 +23,15 @@ function fmtGex(v: number): string {
   return `${sign}${abs.toFixed(0)}`;
 }
 
-export default function PremiumHeatmap({ data }: { data: HeatmapResponse }) {
+const STRIKE_WINDOW = 0.15;
+
+export default function PremiumHeatmap({
+  data,
+  spot,
+}: {
+  data: HeatmapResponse;
+  spot: number;
+}) {
   const { expiries, strikes, grid, maxAbsGex } = useMemo(() => {
     if (!data || !data.heatmap || data.heatmap.length === 0) {
       return { expiries: [], strikes: [], grid: {}, maxAbsGex: 0 };
@@ -32,7 +40,15 @@ export default function PremiumHeatmap({ data }: { data: HeatmapResponse }) {
     const exps = Array.from(new Set(data.heatmap.map((d) => d.expiry))).sort();
     // Reduce strike density — take every Nth strike so we get ≤ 30 rows
     const allStrikes = Array.from(
-      new Set(data.heatmap.map((d) => d.strike))
+      new Set(
+        data.heatmap
+          .filter(
+            (item) =>
+              item.gex !== 0 &&
+              Math.abs(item.strike - spot) / Math.max(spot, 1) <= STRIKE_WINDOW,
+          )
+          .map((d) => d.strike),
+      ),
     ).sort((a, b) => b - a);
     const step = Math.max(1, Math.ceil(allStrikes.length / 30));
     const filteredStrikes = allStrikes.filter((_, i) => i % step === 0);
@@ -60,7 +76,7 @@ export default function PremiumHeatmap({ data }: { data: HeatmapResponse }) {
       grid: gridMap,
       maxAbsGex: maxAbs,
     };
-  }, [data]);
+  }, [data, spot]);
 
   /** Map GEX intensity to green (positive) and red (negative) */
   const cellColor = (val: number, maxAbs: number) => {
@@ -105,7 +121,20 @@ export default function PremiumHeatmap({ data }: { data: HeatmapResponse }) {
           Net GEX per strike & expiry
         </span>
       </div>
-      <div className="overflow-x-auto">
+      {strikes.length === 0 || maxAbsGex === 0 ? (
+        <div
+          className="border px-5 py-10 text-center font-mono text-[11px] uppercase tracking-[0.16em]"
+          style={{ borderColor: "var(--rule)", color: "var(--ink-faint)" }}
+        >
+          No non-zero GEX cells returned.
+          <span
+            className="block mt-2 normal-case tracking-normal font-sans text-sm"
+            style={{ color: "var(--ink-soft)" }}
+          >
+            The selected expiries do not currently have usable open interest or option quotes.
+          </span>
+        </div>
+      ) : <div className="overflow-x-auto">
         <table
           className="w-full font-mono text-[12px] sm:text-[13px] tabular-nums border-collapse"
           style={{ color: "var(--ink-soft)" }}
@@ -188,7 +217,7 @@ export default function PremiumHeatmap({ data }: { data: HeatmapResponse }) {
             ))}
           </tbody>
         </table>
-      </div>
+      </div>}
     </div>
   );
 }

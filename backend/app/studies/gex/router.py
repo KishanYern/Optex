@@ -9,6 +9,11 @@ from ...iv import implied_vol, bs_gamma
 
 router = APIRouter(tags=["gex"])
 
+# A full options chain contains many deep ITM/OTM contracts whose GEX is not
+# useful for this dashboard. Keep the API and both visualizations on the same
+# near-money domain.
+STRIKE_WINDOW = 0.15
+
 @router.get("/gex/chain/{ticker}/{expiry}")
 def gex_chain(ticker: str, expiry: str, r: float | None = None) -> dict:
     try:
@@ -26,6 +31,8 @@ def gex_chain(ticker: str, expiry: str, r: float | None = None) -> dict:
         out = []
         for _, row in df.iterrows():
             K = float(row["strike"])
+            if abs(K - S) / max(S, 1.0) > STRIKE_WINDOW:
+                continue
             mid = float(row["mid"])
             vol = float(row.get("volume", np.nan))
             oi = float(row.get("openInterest", np.nan))
@@ -59,9 +66,12 @@ def gex_chain(ticker: str, expiry: str, r: float | None = None) -> dict:
     calls_gex = compute_gex(ch.calls, True)
     puts_gex = compute_gex(ch.puts, False)
 
-    # Calculate Walls
-    call_wall = max(calls_gex, key=lambda x: x["gex"])["strike"] if calls_gex else 0
-    put_wall = min(puts_gex, key=lambda x: x["gex"])["strike"] if puts_gex else 0
+    # A zero-GEX row is not a wall. Return null so the UI does not turn an
+    # arbitrary first strike into a fake $5/$0 support or resistance level.
+    call_signal = [row for row in calls_gex if row["gex"] > 0]
+    put_signal = [row for row in puts_gex if row["gex"] < 0]
+    call_wall = max(call_signal, key=lambda x: x["gex"])["strike"] if call_signal else None
+    put_wall = min(put_signal, key=lambda x: x["gex"])["strike"] if put_signal else None
 
     return {
         "ticker": ch.ticker,
@@ -104,8 +114,8 @@ def gex_heatmap(ticker: str) -> dict:
             oi = float(row.get("openInterest", 0.0))
             if np.isnan(oi): oi = 0.0
             
-            # Filter strikes +/- 20% of spot to keep data size reasonable
-            if ch.spot * 0.8 <= K <= ch.spot * 1.2:
+            # Keep the heatmap on the same near-money domain as the chain.
+            if abs(K - S) / max(S, 1.0) <= STRIKE_WINDOW:
                 iv = implied_vol(mid, S, K, T, r_val, option_type="c")
                 gamma = bs_gamma(S, K, T, r_val, iv) if not np.isnan(iv) and iv > 0 else 0.0
                 gex = gamma * oi * 100 * S
@@ -123,7 +133,7 @@ def gex_heatmap(ticker: str) -> dict:
             oi = float(row.get("openInterest", 0.0))
             if np.isnan(oi): oi = 0.0
             
-            if ch.spot * 0.8 <= K <= ch.spot * 1.2:
+            if abs(K - S) / max(S, 1.0) <= STRIKE_WINDOW:
                 iv = implied_vol(mid, S, K, T, r_val, option_type="p")
                 gamma = bs_gamma(S, K, T, r_val, iv) if not np.isnan(iv) and iv > 0 else 0.0
                 gex = gamma * oi * 100 * S * -1
