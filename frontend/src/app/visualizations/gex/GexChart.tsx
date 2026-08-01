@@ -15,6 +15,9 @@ type StrikeRow = {
 };
 
 export default function GexChart({ d }: { d: GexChainResponse }) {
+  const callWall = d.calls.some((call) => call.gex > 0) ? d.call_wall : null;
+  const putWall = d.puts.some((put) => put.gex < 0) ? d.put_wall : null;
+
   const rows = useMemo(() => {
     if (!d) return [];
     const strikes = new Set([
@@ -112,12 +115,12 @@ export default function GexChart({ d }: { d: GexChainResponse }) {
         <StatCell label="Spot" value={`$${d.spot.toFixed(2)}`} />
         <StatCell
           label="Call Wall"
-          value={d.call_wall == null ? "—" : `$${d.call_wall.toFixed(0)}`}
+          value={callWall == null ? "—" : `$${callWall.toFixed(0)}`}
           accent="rgba(34, 197, 94, 0.9)"
         />
         <StatCell
           label="Put Wall"
-          value={d.put_wall == null ? "—" : `$${d.put_wall.toFixed(0)}`}
+          value={putWall == null ? "—" : `$${putWall.toFixed(0)}`}
           accent="rgba(239, 68, 68, 0.9)"
         />
         <StatCell
@@ -148,8 +151,8 @@ export default function GexChart({ d }: { d: GexChainResponse }) {
       ) : (
       <div className="space-y-[2px]">
         {rows.map((row) => {
-          const isCallWall = d.call_wall != null && row.strike === d.call_wall;
-          const isPutWall = d.put_wall != null && row.strike === d.put_wall;
+          const isCallWall = callWall != null && row.strike === callWall;
+          const isPutWall = putWall != null && row.strike === putWall;
           const isSpot =
             Math.abs(row.strike - d.spot) ===
             Math.min(...rows.map((r) => Math.abs(r.strike - d.spot)));

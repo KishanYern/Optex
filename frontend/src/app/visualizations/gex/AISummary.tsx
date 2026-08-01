@@ -34,8 +34,10 @@ function analyzeGex(
 ): Insight[] {
   const insights: Insight[] = [];
   const spot = data.spot;
-  const callWall = data.call_wall ?? spot;
-  const putWall = data.put_wall ?? spot;
+  const hasCallWall = data.calls.some((call) => call.gex > 0);
+  const hasPutWall = data.puts.some((put) => put.gex < 0);
+  const callWall = hasCallWall ? data.call_wall ?? spot : spot;
+  const putWall = hasPutWall ? data.put_wall ?? spot : spot;
 
   const totalCallGex = data.calls.reduce((s, c) => s + c.gex, 0);
   const totalPutGex = data.puts.reduce((s, p) => s + p.gex, 0);
@@ -47,7 +49,7 @@ function analyzeGex(
   const positionBias =
     callWallDist < putWallDist ? "upside resistance" : "downside support";
 
-  if (data.call_wall != null && data.put_wall != null) {
+  if (hasCallWall && hasPutWall && data.call_wall != null && data.put_wall != null) {
     insights.push({
     icon: "📍",
     title: "Market Positioning",
@@ -64,7 +66,7 @@ function analyzeGex(
   }
 
   // 2. Key Levels
-  if (data.call_wall != null && data.put_wall != null) insights.push({
+  if (hasCallWall && hasPutWall && data.call_wall != null && data.put_wall != null) insights.push({
     icon: "🎯",
     title: "Key Levels",
     body: `Call wall at ${formatCurrency(callWall)} acts as a magnetic resistance level — market makers hedging here create a "ceiling" that absorbs rallies. Put wall at ${formatCurrency(putWall)} acts as a floor — dealer hedging accelerates buying on dips toward this level.`,
@@ -102,7 +104,7 @@ function analyzeGex(
   });
 
   // 4. Implied Range
-  if (data.call_wall != null && data.put_wall != null) {
+  if (hasCallWall && hasPutWall && data.call_wall != null && data.put_wall != null) {
     const callWallPrice = formatCurrency(callWall);
     const putWallPrice = formatCurrency(putWall);
     const range = callWall - putWall;
