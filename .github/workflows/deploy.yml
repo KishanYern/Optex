@@ -30,8 +30,17 @@ jobs:
             echo "RENDER_DEPLOY_HOOK_URL not set; skipping backend deploy."
             exit 0
           fi
-          curl -fsSL -X POST "$RENDER_DEPLOY_HOOK_URL"
-          echo "Render deploy triggered."
+          response_file="$(mktemp)"
+          http_code="$(curl -sS -o "$response_file" -w "%{http_code}" -X POST "$RENDER_DEPLOY_HOOK_URL" || true)"
+          if [[ "$http_code" =~ ^2[0-9][0-9]$ ]]; then
+            echo "Render deploy triggered (HTTP $http_code)."
+          else
+            echo "::warning::Render deploy hook returned HTTP ${http_code:-unknown}; continuing with frontend deployment."
+            if [ -s "$response_file" ]; then
+              cat "$response_file"
+            fi
+          fi
+          rm -f "$response_file"
 
       - name: Set up Node
         uses: actions/setup-node@v4
