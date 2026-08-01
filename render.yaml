@@ -18,3 +18,9 @@ services:
       # Wildcard preview URLs are matched by the regex fallback in main.py.
       - key: CORS_ORIGINS
         sync: false
+      # Alpaca market-data credentials (free account). Set both in the Render
+      # dashboard — the app fetches option chains, expirations, and spot here.
+      - key: ALPACA_API_KEY_ID
+        sync: false
+      - key: ALPACA_API_SECRET_KEY
+        sync: false

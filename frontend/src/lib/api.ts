@@ -1,4 +1,4 @@
-import type { ExpiriesResponse, RNDResponse } from "./types";
+import type { ExpiriesResponse, RNDResponse, GexChainResponse, HeatmapResponse } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -33,4 +33,23 @@ export async function fetchRND(
   const url = `${API_BASE}/rnd/${encodeURIComponent(ticker)}/${encodeURIComponent(expiry)}?${params}`;
   const res = await fetch(url);
   return jsonOrThrow<RNDResponse>(res);
+}
+
+export async function fetchGexChain(
+  ticker: string,
+  expiry: string,
+  opts: { r?: number } = {},
+): Promise<GexChainResponse> {
+  const params = new URLSearchParams();
+  if (opts.r !== undefined) params.set("r", String(opts.r));
+  const url = `${API_BASE}/gex/chain/${encodeURIComponent(ticker)}/${encodeURIComponent(expiry)}?${params}`;
+  const res = await fetch(url);
+  return jsonOrThrow<GexChainResponse>(res);
+}
+
+export async function fetchGexHeatmap(
+  ticker: string,
+): Promise<HeatmapResponse> {
+  const res = await fetch(`${API_BASE}/gex/heatmap/${encodeURIComponent(ticker)}`);
+  return jsonOrThrow<HeatmapResponse>(res);
 }

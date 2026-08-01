@@ -185,7 +185,14 @@ export default function Controls(props: Props) {
             &nbsp;
           </span>
           <button
-            onClick={props.onLoad}
+            onClick={() => {
+              const trimmed = tickerInput.trim().toUpperCase();
+              if (trimmed && trimmed !== props.ticker) {
+                props.setTicker(trimmed);
+              } else {
+                props.onLoad();
+              }
+            }}
             disabled={props.loading || !props.expiry}
             className="h-9 font-mono text-[11px] uppercase tracking-[0.25em] transition-all disabled:opacity-40"
             style={{

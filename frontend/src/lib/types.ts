@@ -31,3 +31,34 @@ export type ExpiriesResponse = {
   ticker: string;
   expiries: string[];
 };
+
+export type GexItem = {
+  strike: number;
+  mid: number;
+  volume: number;
+  oi: number;
+  iv: number;
+  gamma: number;
+  gex: number;
+};
+
+export type GexChainResponse = {
+  ticker: string;
+  expiry: string;
+  spot: number;
+  call_wall: number;
+  put_wall: number;
+  calls: GexItem[];
+  puts: GexItem[];
+};
+
+export type HeatmapItem = {
+  expiry: string;
+  strike: number;
+  gex: number;
+};
+
+export type HeatmapResponse = {
+  ticker: string;
+  heatmap: HeatmapItem[];
+};

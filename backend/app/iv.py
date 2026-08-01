@@ -38,6 +38,14 @@ def bs_put(S: float, K: float, T: float, r: float, sigma: float, q: float = 0.0)
     return K * math.exp(-r * T) * norm.cdf(-d2) - S * math.exp(-q * T) * norm.cdf(-d1)
 
 
+def bs_gamma(S: float, K: float, T: float, r: float, sigma: float, q: float = 0.0) -> float:
+    if T <= 0 or sigma <= 0:
+        return 0.0
+    d1, _ = _d1_d2(S, K, T, r, sigma, q)
+    return norm.pdf(d1) * math.exp(-q * T) / (S * sigma * math.sqrt(T))
+
+
+
 def implied_vol(price: float, S: float, K: float, T: float, r: float,
                 option_type: str = "c", q: float = 0.0) -> float:
     """Brent solver on BS price minus market price. Returns NaN on failure or

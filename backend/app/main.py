@@ -8,12 +8,22 @@ include_router.
 from __future__ import annotations
 
 import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load .env from project root or backend dir
+_env_path = Path(__file__).resolve().parent.parent.parent / ".env"
+if _env_path.exists():
+    load_dotenv(_env_path)
+else:
+    load_dotenv()
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from .data import get_chain, get_risk_free_rate, list_expiries
 from .studies.rnd.router import router as rnd_router
+from .studies.gex.router import router as gex_router
 
 app = FastAPI(title="optex")
 
@@ -36,6 +46,7 @@ app.add_middleware(
 
 # Study routers. Add a new study by including its router here.
 app.include_router(rnd_router)
+app.include_router(gex_router)
 
 
 @app.get("/health")

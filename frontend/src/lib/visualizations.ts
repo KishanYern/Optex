@@ -22,6 +22,15 @@ export const VISUALIZATIONS: Visualization[] = [
       "diagnostics and a raw vs smoothed overlay.",
     status: "live",
   },
+  {
+    slug: "gex",
+    title: "Gamma exposure",
+    blurb: "Visualize market maker positioning and identify call/put walls.",
+    description:
+      "Calculates Gamma Exposure (GEX) across strikes for a given expiration. " +
+      "Includes a heatmap of option premiums across multiple expirations and strikes.",
+    status: "live",
+  },
 ];
 
 export function getVisualization(slug: string): Visualization | undefined {
